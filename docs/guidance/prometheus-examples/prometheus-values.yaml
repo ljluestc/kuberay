@@ -1,0 +1,49 @@
+# Helm values for Prometheus Operator
+# Install with: helm install prometheus prometheus-community/kube-prometheus-stack -f prometheus-values.yaml --namespace monitoring --create-namespace
+
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
+    retention: 30d
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
+
+grafana:
+  adminPassword: "admin"
+  persistence:
+    enabled: true
+    size: 5Gi
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus-kube-prometheus-prometheus:9090
+        isDefault: true
+
+prometheusOperator:
+  enabled: true
+
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi

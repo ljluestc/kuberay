@@ -1,0 +1,42 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kuberay-operator
+  namespace: kuberay-system
+  labels:
+    app.kubernetes.io/name: kuberay-operator
+    app.kubernetes.io/component: monitoring
+spec:
+  groups:
+  - name: kuberay-operator.rules
+    interval: 30s
+    rules:
+    - alert: KubeRayClusterFailureRate
+      expr: |
+        (rate(ray_operator_clusters_failed_total[5m]) > 0)
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "KubeRay cluster failures detected"
+        description: "KubeRay operator has experienced cluster failures. Failed clusters: {{ $value }}/min in the last 5 minutes."
+
+    - alert: NoClusterCreations
+      expr: |
+        (increase(ray_operator_clusters_created_total[1h]) == 0)
+      for: 30m
+      labels:
+        severity: info
+      annotations:
+        summary: "No KubeRay clusters created in the last hour"
+        description: "No clusters have been created in namespace {{ $labels.namespace }} for the past hour."
+
+    - alert: HighClusterDeletionRate
+      expr: |
+        (rate(ray_operator_clusters_deleted_total[5m]) > rate(ray_operator_clusters_created_total[5m]))
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High cluster deletion rate detected"
+        description: "Cluster deletion rate exceeds creation rate in namespace {{ $labels.namespace }}."
